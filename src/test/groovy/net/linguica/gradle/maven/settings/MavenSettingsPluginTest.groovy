@@ -146,6 +146,33 @@ class MavenSettingsPluginTest extends AbstractMavenSettingsTest {
     }
 
     @Test
+    void declareExternalMirrorWithHttp() {
+        withSettings {
+            mirrors.add new Mirror(id: 'myrepo', mirrorOf: 'central', url: 'http://maven.foo.bar')
+        }
+
+        addPluginWithSettings()
+
+        project.with {
+            repositories {
+                mavenCentral()
+            }
+        }
+
+        project.evaluate()
+
+        assertThat(project.repositories, hasSize(1))
+        assertThat(project.repositories, hasItem(hasProperty('name', equalTo('myrepo'))))
+
+        def gradleVersion = project.getGradle().getGradleVersion()
+        def majorVersion = Integer.valueOf(gradleVersion.substring(0, gradleVersion.indexOf(".")))
+
+        if (majorVersion > 6) {
+            assertThat(project.repositories, hasItem(hasProperty('allowInsecureProtocol', equalTo(true))))
+        }
+    }
+
+    @Test
     void declareMavenCentralMirror() {
         withSettings {
             mirrors.add new Mirror(id: 'myrepo', mirrorOf: 'central', url: 'http://maven.foo.bar')
